@@ -2,6 +2,7 @@
 <launch>
     <rosparam command="load" file="$(find nemo_simulator)/param/sonar.yaml"/>
     <node name='sonar' pkg="nemo_simulator" type='sonar.py'/>
+    <node name='marlin' pkg="nemo_simulator" type='marlin.py'/>
 
     <arg name="world"  default="task"/>
     <arg name="gui"  default="true"/>
