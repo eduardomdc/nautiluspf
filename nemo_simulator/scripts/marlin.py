@@ -16,7 +16,7 @@ class Marlin:
         velocity = Twist()
         # teste = PointStamped()
         # num = teste.point.x
-        num = nemoPos.point.x.data
+        num = nemoPos.point.x.data #nemoPos is undefinel for me
         velocity.linear.x = 1
         while not rospy.is_shutdown():
             self.pub.publish(velocity)
@@ -37,3 +37,4 @@ class Marlin:
 if __name__ == '__main__':
     marlin = Marlin()
     marlin.swim()
+
