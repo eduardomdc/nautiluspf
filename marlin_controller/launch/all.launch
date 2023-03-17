@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find nemo_simulator)/launch/gazebo.launch"/>
+    <include file="$(find marlin_controller)/launch/marlin.launch"/>
+</launch>

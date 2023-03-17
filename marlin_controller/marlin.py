@@ -42,9 +42,6 @@ class Marlin:
     def swim(self):
         rate = rospy.Rate(5)
         velocity = Twist()
-        # teste = PointStamped()
-        # num = teste.point.x
-        #num = self.nemoPos.point.x #nemoPos is undefinel for me
         
         while not rospy.is_shutdown():
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")

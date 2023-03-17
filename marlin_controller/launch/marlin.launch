@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node name='marlin' pkg="marlin_controller" type='marlin.py'/>
+</launch>
