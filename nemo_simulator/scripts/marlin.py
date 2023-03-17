@@ -45,7 +45,7 @@ class Marlin:
         # teste = PointStamped()
         # num = teste.point.x
         #num = self.nemoPos.point.x #nemoPos is undefinel for me
-        velocity.linear.y = 0.5
+        
         while not rospy.is_shutdown():
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
             self.steering(velocity)
@@ -53,15 +53,16 @@ class Marlin:
             rate.sleep()
 
     def steering(self, velocity):
-
+        #foward motion
+        velocity.linear.y = 0.5
         #control change of direction
         if (self.nemoRealPos.y > 0):
             if (self.nemoRealPos.x < 0):
-                velocity.angular.z = -1
+                velocity.angular.z = -2
             else:
-                velocity.angular.z = 1
+                velocity.angular.z = 2
         else:
-            velocity.angular.z = 2
+            velocity.angular.z = 4
 
         #if position is the same, reverse
 
@@ -78,9 +79,7 @@ class Marlin:
 
     def receiveSonar(self, msg):
         self.nemoPos = msg.point
-        #rospy.loginfo(f"Sonar info: {msg.point.x} {msg.point.y} {msg.point.z}")
         self.transform(self.odomOrientation, self.nemoPos)
-        #rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
     
     def receiveOdom(self, msg):
         self.odomOrientation = msg.pose.pose.orientation
