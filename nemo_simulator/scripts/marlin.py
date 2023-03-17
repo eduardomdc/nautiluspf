@@ -27,8 +27,10 @@ class Marlin:
         # teste = PointStamped()
         # num = teste.point.x
         #num = self.nemoPos.point.x #nemoPos is undefinel for me
-        velocity.angular.z = 1
         while not rospy.is_shutdown():
+            rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
+            if (self.nemoRealPos.y == 0):
+            velocity.angular.z = 1
             self.pub.publish(velocity)
             rate.sleep()
 
@@ -45,9 +47,9 @@ class Marlin:
 
     def receiveSonar(self, msg):
         self.nemoPos = msg.point
-        rospy.loginfo(f"Sonar info: {msg.point.x} {msg.point.y} {msg.point.z}")
+        #rospy.loginfo(f"Sonar info: {msg.point.x} {msg.point.y} {msg.point.z}")
         self.transform(self.odomOrientation, self.nemoPos)
-        rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
+        #rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
     
     def receiveOdom(self, msg):
         self.odomOrientation = msg.pose.pose.orientation
