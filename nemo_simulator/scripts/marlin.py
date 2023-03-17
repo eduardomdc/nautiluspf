@@ -116,7 +116,7 @@ class Marlin:
         while not rospy.is_shutdown():
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
             if (self.nemoRealPos.y == 0):
-            velocity.angular.z = 1
+                velocity.angular.z = 1
             self.pub.publish(velocity)
             rate.sleep()
 
