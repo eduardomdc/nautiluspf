@@ -28,6 +28,15 @@ cap.set(4,480)
 greenLower = (40, 40, 40)
 greenUpper = (70, 255, 255)
 
+def isSamePlace(point, lastPoint):
+    #calculates the distance between points and
+    #returns true if the distance is bellow a threshold
+    distanceSq = (point.x-lastPoint.x)**2 + (point.y-lastPoint.y)**2
+    if distanceSq<0.2:
+        return True
+    else:
+        return False
+
 class Marlin:
     def __init__(self):
         rospy.init_node('marlin', anonymous=True)
@@ -38,30 +47,49 @@ class Marlin:
         self.nemoRealPos = Point()
         self.odomOrientation = Quaternion()
         self.odomPosition = Point()
+        self.odomLastPosition = Point() #marlin's position on last sonar scan
+        self.stuck = False #boolean that indicates if stuck procedure should be executed
 
     def swim(self):
         rate = rospy.Rate(5)
-        velocity = Twist()
-        
         while not rospy.is_shutdown():
+            velocity = Twist()
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
-            self.steering(velocity)
+            if not self.stuck:
+                self.steering(velocity)
+            else:
+                self.unstuck(velocity)
             self.pub.publish(velocity)
             rate.sleep()
 
     def steering(self, velocity):
-        #foward motion
-        velocity.linear.y = 0.5
+        velocity.linear.y = 1.5
         #control change of direction
-        if (self.nemoRealPos.y > 0):
+        if self.nemoRealPos.y > 0:
             if (self.nemoRealPos.x < 0):
-                velocity.angular.z = -2
+                velocity.angular.z = -1
             else:
-                velocity.angular.z = 2
+                velocity.angular.z = 1
         else:
+            # reverse if it's behind you
+            velocity.linear.y = -0.5
             velocity.angular.z = 4
 
-        #if position is the same, reverse
+    def unstuck(self, velocity):
+        #big swipe to go around blocker
+        if self.nemoRealPos.x < 0:
+            velocity.angular.z = 6
+        else:
+            velocity.angular.z = -6
+        
+        if self.nemoRealPos.y > 0:
+            #if marlin is facing nemo then reverse
+            velocity.linear.y = -10
+        else:
+            #otherwise go forward
+            velocity.linear.y = 10
+            velocity.angular.z *= -1
+
 
     def transform(self, orientation, absPos):
         # we need to rotate the nemoPos to account for the orientation
@@ -77,6 +105,11 @@ class Marlin:
     def receiveSonar(self, msg):
         self.nemoPos = msg.point
         self.transform(self.odomOrientation, self.nemoPos)
+        if (isSamePlace(self.odomPosition, self.odomLastPosition)):
+            self.stuck = True
+        else:
+            self.stuck = False
+        self.odomLastPosition = self.odomPosition
     
     def receiveOdom(self, msg):
         self.odomOrientation = msg.pose.pose.orientation
