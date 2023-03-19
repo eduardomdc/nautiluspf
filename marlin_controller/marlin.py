@@ -54,6 +54,10 @@ class Marlin:
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             velocity = Twist()
+            if not self.stuck:
+                #only update transform when not executing the stuck maneuver
+                self.transform(self.odomOrientation, self.nemoPos)
+            
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
             if not self.stuck:
                 self.steering(velocity)
@@ -63,22 +67,17 @@ class Marlin:
             rate.sleep()
 
     def steering(self, velocity):
-        # if distance(self.nemoRealPos) > 100:
-        #     fastMode()
-        # else:
-        speed = min(10, distance(self.nemoRealPos)/10)
-        velocity.linear.y = speed
-        #velocity.linear.y = 2
+        velocity.linear.y = min(5, 0.5+distance(self.nemoRealPos)/10)
         #control change of direction
         if self.nemoRealPos.y > 0:
             if (self.nemoRealPos.x < 0):
-                velocity.angular.z = -1
+                velocity.angular.z = -5
             else:
-                velocity.angular.z = 1
+                velocity.angular.z = 5
         else:
             # reverse if it's behind you
-            velocity.linear.y = -0.5
-            velocity.angular.z = 4
+            velocity.linear.y = -1
+            velocity.angular.z = 7
 
     def unstuck(self, velocity):
         #big swipe to go around blocker
@@ -111,7 +110,8 @@ class Marlin:
         self.nemoPos = msg.point
         self.transform(self.odomOrientation, self.nemoPos)
         if (isSamePlace(self.odomPosition, self.odomLastPosition) 
-            and distance(self.nemoRealPos) > 2):
+            and distance(self.nemoRealPos) > 5):
+            #only do stuck if nemo is far away
             self.stuck = True
         else:
             self.stuck = False
