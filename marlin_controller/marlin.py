@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 
 import rospy
-from geometry_msgs.msg import PointStamped
-from geometry_msgs.msg import Point
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import Vector3
-from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import PointStamped, Point, Twist, Vector3, Quaternion
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 import math
 import numpy as np
 
 import cv2
-import numpy as np
 from collections import deque
 
 #for keeping center points of object
@@ -31,11 +26,16 @@ greenUpper = (70, 255, 255)
 def isSamePlace(point, lastPoint):
     #calculates the distance between points and
     #returns true if the distance is bellow a threshold
-    distanceSq = (point.x-lastPoint.x)**2 + (point.y-lastPoint.y)**2
-    if distanceSq<0.2:
+    if distance(point, lastPoint)<0.1:
         return True
     else:
         return False
+
+def distance(a, b = None):
+    if (a != None and b == None):
+        return (a.x)**2+(a.y)**2
+    else:
+        return (a.x-b.x)**2 + (a.y-b.y)**2
 
 class Marlin:
     def __init__(self):
@@ -51,7 +51,7 @@ class Marlin:
         self.stuck = False #boolean that indicates if stuck procedure should be executed
 
     def swim(self):
-        rate = rospy.Rate(5)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             velocity = Twist()
             rospy.loginfo(f"Transformed sonar info: {self.nemoRealPos.x} {self.nemoRealPos.y} {self.nemoRealPos.z}")
@@ -63,7 +63,12 @@ class Marlin:
             rate.sleep()
 
     def steering(self, velocity):
-        velocity.linear.y = 1.5
+        # if distance(self.nemoRealPos) > 100:
+        #     fastMode()
+        # else:
+        speed = min(10, distance(self.nemoRealPos)/10)
+        velocity.linear.y = speed
+        #velocity.linear.y = 2
         #control change of direction
         if self.nemoRealPos.y > 0:
             if (self.nemoRealPos.x < 0):
@@ -94,8 +99,8 @@ class Marlin:
     def transform(self, orientation, absPos):
         # we need to rotate the nemoPos to account for the orientation
         # of the robot around the Z axis
-        orientation_list = [orientation.x, orientation.y, orientation.z, orientation.w]
-        (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
+        orientation_vec = [orientation.x, orientation.y, orientation.z, orientation.w]
+        (roll, pitch, yaw) = euler_from_quaternion(orientation_vec)
         #rotation matrix for Z-axis rotation
         rotationMatrix = np.array([[math.cos(yaw), math.sin(yaw)],
                                    [-math.sin(yaw), math.cos(yaw)]])
@@ -105,7 +110,8 @@ class Marlin:
     def receiveSonar(self, msg):
         self.nemoPos = msg.point
         self.transform(self.odomOrientation, self.nemoPos)
-        if (isSamePlace(self.odomPosition, self.odomLastPosition)):
+        if (isSamePlace(self.odomPosition, self.odomLastPosition) 
+            and distance(self.nemoRealPos) > 2):
             self.stuck = True
         else:
             self.stuck = False
